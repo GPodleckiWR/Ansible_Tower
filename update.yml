@@ -1,0 +1,8 @@
+---
+- name: Aktualizacja listy pakietów na Ubuntu
+  hosts: all
+  become: true       # używa sudo
+  tasks:
+    - name: Uruchomienie 'apt update'
+      ansible.builtin.apt:
+        update_cache: yes

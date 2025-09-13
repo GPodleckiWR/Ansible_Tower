@@ -1,5 +1,5 @@
 ---
-- name: Raport wyłączonych usług na hoście zdalnym
+- name: Raport włączonych usług na hoście zdalnym
   hosts: all
   gather_facts: no
   become: yes
@@ -13,14 +13,16 @@
         owner: dominik
         group: dominik
 
-    - name: Pobierz listę wyłączonych usług
-      shell: systemctl list-unit-files --state=disabled
-      register: disabled_services
+    - name: Pobierz listę włączonych usług
+      shell: systemctl list-unit-files --state=enabled
+      register: enabled_services
 
     - name: Zapisz raport do pliku z datą i godziną
+      vars:
+        current_time: "{{ lookup('pipe', 'date +%Y-%m-%d_%H-%M-%S') }}"
       copy:
-        content: "{{ disabled_services.stdout }}"
-        dest: "/home/dominik/Ansible_Reports/disabled_services_{{ ansible_date_time.date }}_{{ ansible_date_time.time | regex_replace(':','-') }}.txt"
+        content: "{{ enabled_services.stdout }}"
+        dest: "/home/dominik/Ansible_Reports/{{ current_time }}.txt"
         owner: dominik
         group: dominik
         mode: '0644'

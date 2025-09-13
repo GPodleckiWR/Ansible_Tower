@@ -1,8 +1,8 @@
----
-- name: Aktualizacja listy pakietów na Ubuntu
+- name: Aktualizacja listy pakietów na CentOS
   hosts: all
-  become: true       # używa sudo
+  become: yes
   tasks:
-    - name: Uruchomienie 'apt update'
-      ansible.builtin.apt:
-        update_cache: yes
+    - name: Update all packages
+      dnf:
+        name: "*"
+        state: latest

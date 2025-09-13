@@ -1,29 +1,26 @@
 ---
-- name: Aktualizacja pakietów na CentOS 8 z raportem
+- name: Raport wyłączonych usług na hoście zdalnym
   hosts: all
+  gather_facts: no
   become: yes
-  gather_facts: yes
-
   tasks:
-    - name: Aktualizacja wszystkich pakietów
-      dnf:
-        name: "*"
-        state: latest
-      register: update_result
 
-    - name: Zapisz szczegóły aktualizacji do CSV
+    - name: Utwórz katalog na raporty, jeśli nie istnieje
+      file:
+        path: /home/dominik/Ansible_Reports
+        state: directory
+        mode: '0755'
+        owner: dominik
+        group: dominik
+
+    - name: Pobierz listę wyłączonych usług
+      shell: systemctl list-unit-files --state=disabled
+      register: disabled_services
+
+    - name: Zapisz raport do pliku z datą i godziną
       copy:
-        dest: "/tmp/dnf_update_report_{{ inventory_hostname }}.csv"
-        content: |
-          DateTime,Host,Package,Version
-      delegate_to: localhost
-
-    - name: Dopisz zaktualizowane pakiety z timestamp
-      lineinfile:
-        path: "/tmp/dnf_update_report_{{ inventory_hostname }}.csv"
-        line: "{{ ansible_date_time.iso8601 }},{{ inventory_hostname }},{{ item.name }},{{ item.version }}"
-        create: yes
-      loop: "{{ update_result.results }}"
-      when: update_result.results is defined
-      delegate_to: localhost
-
+        content: "{{ disabled_services.stdout }}"
+        dest: "/home/dominik/Ansible_Reports/disabled_services_{{ ansible_date_time.date }}_{{ ansible_date_time.time | regex_replace(':','-') }}.txt"
+        owner: dominik
+        group: dominik
+        mode: '0644'

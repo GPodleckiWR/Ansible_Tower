@@ -1,0 +1,29 @@
+---
+- name: Aktualizacja pakietów na CentOS 8 z raportem
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Aktualizacja wszystkich pakietów
+      dnf:
+        name: "*"
+        state: latest
+      register: update_result
+
+    - name: Zapisz szczegóły aktualizacji do CSV
+      copy:
+        dest: "/tmp/dnf_update_report_{{ inventory_hostname }}.csv"
+        content: |
+          DateTime,Host,Package,Version
+      delegate_to: localhost
+
+    - name: Dopisz zaktualizowane pakiety z timestamp
+      lineinfile:
+        path: "/tmp/dnf_update_report_{{ inventory_hostname }}.csv"
+        line: "{{ ansible_date_time.iso8601 }},{{ inventory_hostname }},{{ item.name }},{{ item.version }}"
+        create: yes
+      loop: "{{ update_result.results }}"
+      when: update_result.results is defined
+      delegate_to: localhost
+
